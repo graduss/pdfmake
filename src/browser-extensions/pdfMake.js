@@ -6,6 +6,7 @@ var PdfPrinter = require('../printer');
 var isFunction = require('../helpers').isFunction;
 var FileSaver = require('../../libs/FileSaver.js/FileSaver');
 var saveAs = FileSaver.saveAs;
+var MaxTryLayoutIteration = require('../exception').MaxTryLayoutIteration;
 
 var defaultClientFonts = {
 	Roboto: {
@@ -189,5 +190,6 @@ module.exports = {
 			throw 'Your browser does not provide the level of support needed';
 		}
 		return new Document(docDefinition, global.pdfMake.tableLayouts, global.pdfMake.fonts, global.pdfMake.vfs);
-	}
+	},
+	MaxTryLayoutIteration: MaxTryLayoutIteration
 };

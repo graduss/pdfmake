@@ -17,6 +17,7 @@ var fontStringify = require('./helpers').fontStringify;
 var isFunction = require('./helpers').isFunction;
 var TextTools = require('./textTools');
 var StyleContextStack = require('./styleContextStack');
+var MaxTryLayoutIteration = require('./exception').MaxTryLayoutIteration;
 
 function addAll(target, otherArray) {
 	otherArray.forEach(function (item) {
@@ -37,11 +38,20 @@ function LayoutBuilder(pageSize, pageMargins, imageMeasure) {
 	this.tracker = new TraversalTracker();
 	this.imageMeasure = imageMeasure;
 	this.tableLayouts = {};
+	this.maxTryLayoutIteration = Infinity;
 }
 
 LayoutBuilder.prototype.registerTableLayouts = function (tableLayouts) {
 	this.tableLayouts = pack(this.tableLayouts, tableLayouts);
 };
+
+LayoutBuilder.prototype.setMaxTryLayoutIteration = function (num) {
+	if (Number.isInteger(num)) {
+		this.maxTryLayoutIteration = num;
+	} else {
+		throw new TypeError('Num is not integer');
+	}
+}
 
 /**
  * Executes layout engine on document-definition-object and creates an array of pages
@@ -135,9 +145,16 @@ LayoutBuilder.prototype.layoutDocument = function (docStructure, fontProvider, s
 	}
 
 	var result = this.tryLayoutDocument(docStructure, fontProvider, styleDictionary, defaultStyle, background, header, footer, images, watermark);
+	var iterationCount = 0;
 	while (addPageBreaksIfNecessary(result.linearNodeList, result.pages)) {
+		if (iterationCount > this.maxTryLayoutIteration) {
+			throw new MaxTryLayoutIteration("Iteration Count is more "+ this.maxTryLayoutIteration);
+		}
+
 		resetXYs(result);
 		result = this.tryLayoutDocument(docStructure, fontProvider, styleDictionary, defaultStyle, background, header, footer, images, watermark);
+
+		iterationCount++;
 	}
 
 	return result.pages;
